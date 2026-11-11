@@ -12,6 +12,9 @@
   - =replay.py= -- single pass over the history, tracking per-word metadata.
   - =words.py= -- common-word list loading and matching.
   - =report.py= -- one report model, rendered to JSON, Markdown, LaTeX.
+  - =session.py= -- what every script does around its measure: working copy, book,
+    replay, author matching, report header and output.
+  - =fair.py= -- the fair measure: tallies, points, shares, sensitivity.
 - =common-words.txt= -- default list (English function words plus mathematical prose:
   /let, consider, assume, suppose, then, hence, thus, we, show, .../).
 - =docs/<script>.md=.
