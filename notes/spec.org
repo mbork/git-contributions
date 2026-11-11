@@ -63,7 +63,9 @@ Plus =make_test_repo.py=, which builds a small synthetic repo to try the scripts
   (=\import=, =\subfile=: backlog).
 - Comments are stripped: commenting text out counts as removing it.
 - The preamble (main file before =\begin{document}=, and files input from there) is
-  excluded unless =--include-preamble=, both from the current text and from history.
+  excluded unless =--include-preamble=, both from the current text and from history; in
+  the history, the part of any file before =\begin{document}= is preamble, so that a
+  renamed main file is still recognized.
 - History: all ancestors of =--commit=, all =.tex= files (text moved in from files that are
   no longer included keeps its author).
 
