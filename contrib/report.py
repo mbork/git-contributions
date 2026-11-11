@@ -387,10 +387,16 @@ RENDERERS = {'json': render_json, 'markdown': render_markdown, 'latex': render_l
 def write(report, fmt, path):
     """Render REPORT as FMT and write it to PATH, replacing it only when complete."""
     text = RENDERERS[fmt](report)
+    write_text(text, path)
+
+
+def write_text(text, path, errors='strict'):
+    """Write TEXT to PATH (UTF-8, encoding errors handled as ERRORS), replacing the file
+    only when the text is complete."""
     path = Path(path)
     handle, temporary = tempfile.mkstemp(dir=path.parent, prefix='.' + path.name + '.')
     try:
-        with os.fdopen(handle, 'w', encoding='utf-8') as stream:
+        with os.fdopen(handle, 'w', encoding='utf-8', errors=errors) as stream:
             stream.write(text)
         # mkstemp creates the file private; give it the usual permissions.
         umask = os.umask(0)
