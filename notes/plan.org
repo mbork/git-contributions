@@ -1,0 +1,80 @@
+#+title: Plan
+#+startup: content
+
+* Layout
+
+- =make_test_repo.py=, the five scripts at the top level, executable.
+- =contrib/= -- shared package:
+  - =cli.py= -- common options, usage on no arguments, timing, progress on stderr.
+  - =workcopy.py= -- sibling copy: build, rewrite, reuse, commit map, extracted tree.
+  - =latex.py= -- tokenizer with source offsets, comment stripping, include graph,
+    preamble, units (sentences, formulas, paragraphs, sections, chapters).
+  - =replay.py= -- single pass over the history, tracking per-word metadata.
+  - =words.py= -- common-word list loading and matching.
+  - =report.py= -- one report model, rendered to JSON, Markdown, LaTeX.
+- =common-words.txt= -- default list (English function words plus mathematical prose:
+  /let, consider, assume, suppose, then, hence, thus, we, show, .../).
+- =docs/<script>.md=.
+
+* Working copy
+
+1. Resolve =--commit= in the original repo (read-only =git rev-parse=).
+2. If =<sibling>/meta.json= exists and records success, reuse.
+3. Otherwise: create the sibling with a marker file first (so a rebuild only ever deletes
+   our own directories), copy the original =.git= to =<sibling>/repo.git= as a bare repo,
+   remove all remotes and worktree records, delete every ref except one branch at the
+   target, then =git filter-repo --force= with =--file-info-callback= rewriting only =.tex=
+   blobs: strip comments (unescaped =%= to end of line), then one word per line. Other files
+   (=.mailmap=, images) stay intact.
+4. =git archive= of the target from the original repo into =<sibling>/tree/= (for
+   =highlight_author.py=).
+5. Write =meta.json= last (original hash, rewritten hash, ref, versions).
+
+* Tokenizer contract
+
+The tokens of a rewritten blob equal the tokenizer's tokens of the original file, so at
+=--commit= word /i/ of the replayed state maps to a source span in the original. Checked
+at run time; a mismatch is an internal error.
+
+* Replay
+
+Generalizes the earlier single-pass approach:
+
+- State per commit: per file, a list of word records (text, writer, kind written/rewritten,
+  last mover). Shared lists are never mutated; states are dropped once all children are done.
+- Per commit: =git diff -U0 -M --histogram= from the parent (histogram reduces spurious
+  matches of common words across a rewrite); hunks applied to the state.
+- Moves: greedy matching of runs of >= 8 equal words between the commit's removed and added
+  words.
+- Rewrite: per hunk, min(added, removed-by-others) of the added words are marked rewritten.
+- Removal events: (word, writer, remover, commit, file, index, section at that time),
+  aggregated or kept depending on the script (=removed_text.py= keeps them for X only).
+- Merges: one diff per parent; words found in some parent keep its record; the rest go to
+  the merge author.
+- Preamble: in each state, the main file's words before =\begin{document}= and the files
+  input from the preamble at the target are excluded from removal credit (unless
+  =--include-preamble=).
+- Authors from =git log --format='%H %aN %aE'= with the chosen mailmap
+  (=-c mailmap.file=...=).
+
+* Max estimate
+
+Line-based upper bound from the *original* repo, read-only: =git log --author ... -M --diff-merges=remerge -p=
+over ancestors of the target (and =--all= filtered by date with =--all-branches=), counting
+words on added lines; author filter done in Python on =%an <%ae>= and =%aN <%aE>= with the
+same regex. Word-based estimate from the replay (all words X ever typed, churn included).
+
+* Reports
+
+A report is a tree of sections, paragraphs and tables (plus long lists). Each renderer walks
+it: JSON dumps it with data as numbers; Markdown uses pipe tables; LaTeX escapes text and
+uses =booktabs= / =longtable=. Source excerpts render as code (Markdown backticks, LaTeX
+=\texttt= with escaping).
+
+* Highlighting
+
+Walk the target's include graph, emitting each file's source (comments kept as they are),
+wrapping runs of X's words in =\highLight[strong]{...}= / =\highLight[light]{...}= (=lua-ul=).
+A run is split at any boundary where wrapping would be unsafe (unbalanced braces, math
+delimiters, =\begin= / =\end=, =&=, =\\=, verbatim, reference macros), and unsafe pieces
+are left alone and counted. Preamble gets =\usepackage{luacolor,lua-ul}= and colors.
