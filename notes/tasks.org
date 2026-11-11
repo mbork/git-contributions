@@ -13,6 +13,6 @@ fixes are folded into those commits.
 * DONE =author_shares.py= and =docs/author_shares.md=
 * DONE =author_profile.py= and =docs/author_profile.md=
 * DONE =surviving_text.py= and =docs/surviving_text.md=
-* TODO =removed_text.py= and =docs/removed_text.md=
+* DONE =removed_text.py= and =docs/removed_text.md=
 * TODO =highlight_author.py= and =docs/highlight_author.md=
 * TODO A README listing the scripts and pointing to =docs/=
