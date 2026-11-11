@@ -15,4 +15,4 @@ fixes are folded into those commits.
 * DONE =surviving_text.py= and =docs/surviving_text.md=
 * DONE =removed_text.py= and =docs/removed_text.md=
 * TODO =highlight_author.py= and =docs/highlight_author.md=
-* TODO A README listing the scripts and pointing to =docs/=
+* TODO =README.md=: Polish draft (uncommitted), mbork translates, then commit
