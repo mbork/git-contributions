@@ -1,0 +1,129 @@
+.TH GIT-CONTRIB 1 2026-11-11 "git-contributions" "Git Manual"
+.SH NAME
+git-contrib \- measure authors' contributions to a LaTeX project kept in Git
+.SH SYNOPSIS
+.B git contrib
+.I subcommand
+.RI [ options ]
+.br
+.B git contrib
+.B \-h
+.SH DESCRIPTION
+.B git contrib
+follows every word of a LaTeX project (a book, an article, a paper) through the history
+of its Git repository and finds out who wrote it, word by word rather than line by line (a
+line of LaTeX source is often a whole paragraph).
+It never modifies the measured repository: the history is rewritten in a copy, in a
+sibling directory named
+.IR repo \fB\-\-contrib\-\-\fR ref \- hash ,
+which is kept and reused by later runs.
+Each subcommand writes its report to a file and prints its progress, the file name and
+the time taken on standard error.
+.SH SUBCOMMANDS
+.TP
+.B shares
+Every author's fair share of the project, in percent: writing counts most, rewriting someone
+else's text less, moving text little, and a draft someone else replaced half.
+.TP
+.B profile
+One author's contribution measured in many ways (words, uncommon words, sentences,
+formulas, paragraphs), with a fair and a maximal estimate.
+.TP
+.B surviving
+Everything one author wrote that is still in the project, sentence by sentence.
+.TP
+.B removed
+Everything one author wrote that was later deleted or replaced, commit by commit.
+.TP
+.B highlight
+The whole project as one LaTeX file with one author's words highlighted.
+.SH OPTIONS
+Every subcommand accepts these options; run
+.B git contrib
+.I subcommand
+.B \-\-help
+for the rest.
+.TP
+.BI \-\-repo " dir"
+The measured repository (default: the one containing the current directory).
+.TP
+.BI \-\-main " file"
+The main
+.B .tex
+file, relative to the repository root (default: the value of
+.BR "git config contrib.main" ).
+.TP
+.BI \-\-commit " rev"
+The branch, tag or commit to measure (default:
+.BR HEAD ).
+.TP
+.BI \-\-author " regex"
+The author, for every subcommand but
+.BR shares :
+a case-insensitive regular expression matched against
+.I Name <email>
+of every commit, as recorded and after
+.BR .mailmap .
+.TP
+.BI \-\-format " format"
+.BR json ,
+.B markdown
+or
+.B latex
+(default:
+.BR markdown ;
+not for
+.BR highlight ).
+.TP
+.BI \-\-output " file"
+The report (default: a name built from the subcommand, the author and the revision, in
+the current directory).
+.SH CONFIGURATION
+.TP
+.B contrib.main
+The main file, so that
+.B \-\-main
+can be left out:
+.B git config contrib.main main.tex
+in the project's repository.
+.SH NOTES
+.B git contrib
+works in the current directory and with
+.B git \-C
+.IR dir ,
+but not with
+.B git \-\-git\-dir
+or
+.BR \-\-work\-tree :
+it removes every
+.B GIT_*
+environment variable before running git, so that git can never be pointed at the measured
+repository by accident, and refuses to run when those two are set.
+.PP
+A subcommand given no options at all prints its usage; give at least one option (for
+example
+.BR "\-\-commit HEAD" )
+to run it with all defaults.
+.PP
+.B git contrib \-\-help
+shows this page;
+.B git contrib \-h
+lists the subcommands.
+.SH EXAMPLES
+.nf
+git config contrib.main main.tex
+git contrib shares \-\-format latex
+git contrib profile \-\-author 'kowalski' \-\-format latex
+git contrib highlight \-\-author 'kowalski' \-\-commit v1.0
+.fi
+.SH SEE ALSO
+The documentation of each subcommand in the
+.B docs
+directory of the scripts:
+.BR author_shares.md ,
+.BR author_profile.md ,
+.BR surviving_text.md ,
+.BR removed_text.md ,
+.BR highlight_author.md ,
+and
+.BR git-contrib.md .
