@@ -1,0 +1,203 @@
+#+title: Spec: measuring authors' contributions to a LaTeX project
+#+startup: content
+
+* Goal
+
+Five scripts estimating authors' contributions to a Git-controlled, multi-file LaTeX project
+(English text, possibly Polish comments) whose lines are whole paragraphs. Each measures the
+state at one commit. Python standard library only, plus =git= and =git-filter-repo=.
+
+| Script                | Question answered                                              |
+|-----------------------+----------------------------------------------------------------|
+| =author_shares.py=    | What is each author's fair share, in percent?                  |
+| =author_profile.py=   | How big is one author's contribution, measured in many ways?   |
+| =surviving_text.py=   | Which of one author's text is still there?                     |
+| =removed_text.py=     | Which of one author's text was removed, when and by whom?      |
+| =highlight_author.py= | Show the project with one author's surviving text highlighted. |
+
+Plus =make_test_repo.py=, which builds a small synthetic repo to try the scripts on.
+
+* Common behavior
+
+** Command line
+
+- Long options only, no positional arguments; =--help= or no arguments prints usage.
+- Common options:
+  - =--repo DIR= (required) -- the measured repository; never modified.
+  - =--main FILE= (required) -- the main =.tex= file, relative to the repo root.
+  - =--commit REV= (default =HEAD=) -- branch, tag or hash in the *original* repo.
+  - =--format json|markdown|md|latex|tex= (default =markdown=; not in =highlight_author.py=).
+  - =--output FILE= (default =<script>-<author>-<ref>.<ext>= in the current directory;
+    no =<author>= part in =author_shares.py=).
+  - =--mailmap FILE= (default: =.mailmap= at =--commit=, if any).
+  - =--include-preamble= -- also count the preamble (see [[*What text counts]]).
+  - =--common-words FILE= (default: =common-words.txt= shipped with the scripts).
+- One-author scripts: =--author REGEX= (required), matched case-insensitively against
+  =Name <email>=, both raw and after =.mailmap=. All matching identities form one author;
+  the report lists them. No match is an error.
+
+** Working copy
+
+- Rewriting history happens in a sibling directory =<repo>--contrib--<ref>-<hash7>=
+  (lowercased; =<ref>-= omitted when =--commit= is a hash). Keyed by hash, so a moved branch
+  never reuses a stale copy.
+- It is a plain copy of =.git= (not a clone), with every remote removed, then rewritten.
+- Kept and reused by all scripts; an incomplete copy (interrupted run) is rebuilt.
+- Reports show *original* commit hashes.
+
+** Output
+
+- The report goes to =--output=. stderr gets progress (with elapsed time), errors, the output
+  file name and the total run time. stdout stays empty.
+- JSON, Markdown and LaTeX carry exactly the same information, including the introduction,
+  interpretation guide and caveats (in JSON as text fields).
+- Markdown and LaTeX are readable on their own: short introduction, interpretation guide,
+  tables. LaTeX is a standalone pdfLaTeX document using =booktabs= (=longtable= for lists).
+- Every report has a header: repo, ref and hash, commit date, options used, generation time.
+
+* Definitions
+
+** What text counts
+
+- Files reachable from =--main= via =\input= and =\include= at =--commit=
+  (=\import=, =\subfile=: backlog).
+- Comments are stripped: commenting text out counts as removing it.
+- The preamble (main file before =\begin{document}=, and files input from there) is
+  excluded unless =--include-preamble=, both from the current text and from history.
+- History: all ancestors of =--commit=, all =.tex= files (text moved in from files that are
+  no longer included keeps its author).
+
+** Units
+
+- *Word* -- a maximal run of non-whitespace characters (so =\emph{word},= is one word).
+- *Common word* -- a word which, stripped of surrounding non-letters and lowercased, is in
+  the common-words file (one word per line, =#= comments). All other words, including
+  Polish ones, are uncommon.
+- *Formula* -- =$...$=, =\(...\)=, =$$...$$=, =\[...\]= or a math environment (=equation=,
+  =align=, =gather=, =multline=, =eqnarray=, starred too).
+- *Sentence* -- ends at =.=, =?= or =!= followed (after closing characters) by whitespace,
+  except after a known abbreviation (=e.g.=, =i.e.=, =cf.=, =Fig.=, ...); also ends at a
+  paragraph end. A sectioning title is a sentence of its own.
+- *Paragraph* -- delimited by blank lines, =\par=, sectioning commands and display
+  environments.
+- *Section* -- the innermost =\part=, =\chapter=, =\section= or =\subsection= a word is in.
+- *Chapter* -- top-level unit for per-chapter tables: =\chapter= if the project has any,
+  otherwise =\section=.
+
+** Who did what to a word
+
+Followed over the whole history, word by word:
+
+- *writer* -- who typed it. Moves do not change the writer.
+- *rewrite* -- a word typed in place of words written by *someone else* (same diff hunk).
+  In a hunk replacing /r/ such words by /a/ words, min(/a/, /r/) count as rewriting, the rest
+  as writing.
+- *move* -- a run of at least 8 words removed and re-added in the same commit (same or
+  another file). The mover is recorded; the writer stays.
+- *removal* -- a word deleted or replaced, not as part of a move.
+- Merges: words keep their authors from the parent that had them; conflict resolutions
+  belong to the merge's author; removals are credited on the branch where they happened.
+- Text deleted in one commit and re-added in a later one is new writing by whoever re-added
+  it.
+
+* The fair measure (=author_shares.py=)
+
+Points per word, summed per author, normalized to percent:
+
+| Contribution                                          | Points to       | Default |
+|-------------------------------------------------------+-----------------+---------|
+| surviving word, written fresh                         | writer          | 1       |
+| surviving word, written as a rewrite of others' text  | rewriter        | 0.75    |
+| surviving word moved by someone other than its writer | last such mover | 0.1     |
+| word removed by someone other than its writer         | writer          | 0.5     |
+| word removed by its own writer                        | --              | 0       |
+
+Rationale: writing is the main contribution; rewriting someone's text builds on their work,
+so it weighs less; moving is editorial and weighs least. A draft reworked by others still
+shaped the project (half credit), but redrafting your own text earns nothing extra, so churn does
+not pay. Cutting (pure deletion) earns the cutter nothing (backlog).
+
+Options =--weight-rewrite=, =--weight-move=, =--weight-removed= (writing is fixed at 1).
+
+Report:
+- main table per author: fair share, share of the current text (words by writer), points
+  per category;
+- sensitivity table: fair share with each weight set to 0 and to 1 (others at default);
+- per-chapter table: share of the current text and of the surviving-word points (removal
+  credit has no place in the current text, so it is left out there).
+
+* =author_profile.py=
+
+For one author X, every figure as a count and as a share of the total:
+
+- words: all, and uncommon only;
+- sentences, formulas, paragraphs: written entirely by X, mostly by X (> 50% of words), with
+  at least one word by X, and word-weighted (sum of X's fractions);
+- the fair share (same measure and weight options as =author_shares.py=);
+- the *max* estimate (below);
+- per-chapter table of words and uncommon words.
+
+** Max estimate
+
+Must never be below X's share under any reasonable definition. It is the largest of:
+- *line-based upper bound*: words on every *line* (paragraph) X added or changed in any
+  commit by X, conflict resolutions included, all text and comments counted, in ancestors of
+  =--commit= plus, with =--all-branches=, X's commits on any branch not newer than
+  =--commit= (squash-merged work), divided by the words in the current text. Line-level, so
+  a one-word edit credits the whole paragraph, so the numerator is at least everything X
+  ever typed;
+- every share above that counts units "with at least one word by X";
+
+capped at 100%. The report has a table of all these figures (with numerators and
+denominators), marking the one that gave the maximum, plus the *word-based estimate*
+(every word X ever typed, divided by the words in the current text) for comparison.
+
+* =surviving_text.py=
+
+X's surviving text. Moving text does *not* count as a contribution here: a word belongs to
+its writer, wherever it was moved and by whom.
+
+- Stats: X's words (all, uncommon), formulas and sentences (entire and partial), paragraphs
+  touched.
+- List: grouped by chapter and section, in project order, one sentence per line, only sentences
+  with a word by X. Runs of other authors' words show as =[...]=. Formulas appear as source.
+  Each line gives its file and line number.
+
+* =removed_text.py=
+
+X's text that did not survive until =--commit=.
+
+- Item: a maximal run of consecutive words by X removed in one commit (moves are not
+  removals). Each item: the text (words joined by single spaces), who removed it (X or
+  someone else), commit (hash, subject), date, file and section at that time.
+- Stats: words removed by X and by others (per remover), items, uncommon words.
+- List: chronological, grouped by commit.
+
+* =highlight_author.py=
+
+Writes one flattened =.tex= file (all =\input= / =\include= inlined) of the project at
+=--commit=, with X's surviving words highlighted: common words light, other words strong.
+Writer as in =surviving_text.py= (moves do not count).
+
+- Compiles with LuaLaTeX (uses =lua-ul=); stderr prints the exact command, which takes the
+  other files (images, bibliography, classes) from an extracted tree of =--commit= kept in
+  the working copy.
+- Options: =--light-color=, =--strong-color= (=xcolor= specs).
+- Best effort: words inside display math, verbatim, macro names and arguments such as
+  =\label=, =\ref=, =\cite=, environment delimiters and alignment cells are not highlighted;
+  an inline formula is highlighted as a whole when most of its words are X's. The file
+  starts with a comment block (and stderr gets a summary) giving how many of X's words
+  could not be highlighted.
+
+* =make_test_repo.py=
+
+=--dir DIR= (must not exist). Builds a repo with three authors (one with a =.mailmap=
+alias), a main file with preamble, =\input= and =\include=, long-line paragraphs, formulas
+and comments, and commits covering: fresh writing, typo fixes, rewrites, moves within and
+across files, removals by self and by others, a rename, a preamble edit, a branch with a
+merge and a conflict resolution, and a tag in the middle of history.
+
+* Documentation
+
+=docs/<script>.md= per script: first a non-technical section (what it measures, how, with
+examples, trade-offs and caveats), then the detailed algorithm.
