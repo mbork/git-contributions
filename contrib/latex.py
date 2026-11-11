@@ -253,6 +253,25 @@ def balanced_group(clean, index, opener='{', closer='}'):
     return -1
 
 
+def is_balanced(text):
+    """Whether the unescaped braces of TEXT balance, never closing more than were opened."""
+    depth = 0
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if char == '\\':
+            index += 2
+            continue
+        if char == '{':
+            depth += 1
+        elif char == '}':
+            depth -= 1
+            if depth < 0:
+                return False
+        index += 1
+    return depth == 0
+
+
 def skip_spaces(clean, index):
     while index < len(clean) and clean[index].isspace():
         index += 1
