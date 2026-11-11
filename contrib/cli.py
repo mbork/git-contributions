@@ -20,18 +20,29 @@ FORMATS = {'json': 'json', 'markdown': 'markdown', 'md': 'markdown',
 EXTENSIONS = {'json': 'json', 'markdown': 'md', 'latex': 'tex'}
 
 
+# The name shown in usage messages instead of the script's; git_contrib.py sets it to
+# "git contrib <subcommand>".
+PROG = None
+
+
 def make_parser(prog, description, *, is_one_author, does_offer_format=True):
     """An argument parser with the options common to all scripts.
 
+    PROG names the parser in usage messages; PROG (the module variable), when set,
+    replaces it.
+
     Only long options; `--help` is added explicitly because argparse's default also
     defines `-h`."""
-    parser = argparse.ArgumentParser(prog=prog, description=description, add_help=False,
+    shown_prog = PROG if PROG is not None else prog
+    parser = argparse.ArgumentParser(prog=shown_prog, description=description, add_help=False,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     group = parser.add_argument_group('common options')
-    group.add_argument('--repo', metavar='DIR', required=True,
-                       help='the measured repository (never modified)')
-    group.add_argument('--main', metavar='FILE', required=True,
-                       help='the main .tex file, relative to the repository root')
+    group.add_argument('--repo', metavar='DIR', default='.',
+                       help='the measured repository, never modified (default: the one'
+                            ' containing the current directory)')
+    group.add_argument('--main', metavar='FILE',
+                       help='the main .tex file, relative to the repository root (default:'
+                            ' git config contrib.main of the repository)')
     group.add_argument('--commit', metavar='REV', default='HEAD',
                        help='branch, tag or hash to measure (default: %(default)s)')
     if is_one_author:

@@ -4,6 +4,7 @@ project, replay the history, match authors, and write the report with a common h
 
 # * Imports
 import re
+import shlex
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
@@ -27,6 +28,9 @@ class Session:
 
 def start(args, progress, script):
     """Prepare everything a script needs for ARGS."""
+    if args.main is None:
+        # Before building the working copy, which can take long: fail early without one.
+        args.main = configured_main(workcopy.locate(args.repo, args.commit).original)
     work_copy = workcopy.prepare(args.repo, args.commit, progress)
     if args.mailmap is not None:
         mailmap = Path(args.mailmap).expanduser().resolve()
@@ -44,6 +48,15 @@ def start(args, progress, script):
         raise ContribError(f'no text found in {args.main} and the files it includes')
     common = words.load(args.common_words)
     return Session(args, progress, work_copy, mailmap, book, common, script)
+
+
+def configured_main(top):
+    """The main file named by contrib.main in the configuration of the repository at TOP."""
+    main = workcopy.repository_config(top, 'contrib.main')
+    if not main:
+        raise ContribError('no main file: give --main, or set it once with'
+                           f' git -C {shlex.quote(str(top))} config contrib.main FILE')
+    return main
 
 
 def run_replay(session, author_key, watched=()):

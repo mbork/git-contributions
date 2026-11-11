@@ -294,6 +294,13 @@ def original_config(common_dir, key):
     return result.stdout.decode().strip() if result.returncode == 0 else None
 
 
+def repository_config(top, key):
+    """KEY from the own configuration of the repository at TOP (not the user's), or None."""
+    common_dir = Path(run_git_text('rev-parse', '--path-format=absolute', '--git-common-dir',
+                                   cwd=top))
+    return original_config(common_dir, key)
+
+
 def original_config_regexp(common_dir, pattern):
     """(key, value) pairs of the original's own config file whose keys match PATTERN."""
     config = common_dir / 'config'
