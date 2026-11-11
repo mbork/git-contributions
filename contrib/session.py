@@ -92,6 +92,34 @@ def one_author_key(pattern):
     return key, matches
 
 
+def start_one_author(args, progress, script, *, does_watch=False):
+    """Everything a one-author script needs: (context, result, matches).  With DOES_WATCH,
+    the replay also collects the removals of the author's words."""
+    context = start(args, progress, script)
+    author_key, matches = one_author_key(args.author)
+    watched = {THE_AUTHOR} if does_watch else ()
+    result = run_replay(context, author_key, watched=watched)
+    require_author(result, args)
+    return context, result, matches
+
+
+def require_author(result, args):
+    """Fail unless some commit in the history is by THE_AUTHOR."""
+    if not any(commit.author == THE_AUTHOR for commit in result.commits.values()):
+        raise ContribError(f'no commit in the history of {args.commit} has an author matching'
+                           f' {args.author!r}')
+
+
+def add_identities_section(document, result):
+    """The section listing the identities counted as THE_AUTHOR."""
+    section = document.section('identities', 'Identities counted as the author')
+    section.paragraph('Every commit whose author (as recorded, or after `.mailmap`) matches'
+                      ' the regex counts as the author\'s.')
+    table = section.table('identities', '', [report.Column('identity', 'Identity')])
+    for identity in identities(result).get(THE_AUTHOR, []):
+        table.add(identity=identity)
+
+
 def identities(result):
     """Author key -> sorted list of identities used in its commits (after .mailmap and raw)."""
     found = {}
@@ -109,7 +137,44 @@ def display_name(result, key):
     return max(sorted(counts), key=lambda name: counts[name])
 
 
+# * Units
+SENTENCE_KINDS = ('text', 'heading')    # sentences proper and headings
+
+
+def author_masks(context, result):
+    """(is_by_author, is_uncommon): one boolean per token of the project."""
+    book = context.book
+    is_by_author = [result.state[t.path][t.index].writer == THE_AUTHOR for t in book.tokens]
+    is_uncommon = [not words.is_common(t.text, context.common) for t in book.tokens]
+    return is_by_author, is_uncommon
+
+
+def unit_lists(book):
+    """(key, label, units) for sentences, formulas and paragraphs; a unit is a non-empty
+    list of token indices."""
+    sentences = [s.tokens for s in book.sentences if s.kind in SENTENCE_KINDS]
+    formulas = [f.tokens for f in book.formulas]
+    paragraphs = [b.tokens for b in book.blocks if b.kind == 'text']
+    return [(key, label, [unit for unit in units if unit])
+            for key, label, units in [('sentences', 'Sentences', sentences),
+                                      ('formulas', 'Formulas', formulas),
+                                      ('paragraphs', 'Paragraphs', paragraphs)]]
+
+
+def unit_fractions(units, is_by_author):
+    """For each unit, the fraction of its words by the author."""
+    return [sum(1 for index in unit if is_by_author[index]) / len(unit) for unit in units]
+
+
 # * Reports
+def add_prose(document, key, title, paragraphs):
+    """A section made of PARAGRAPHS."""
+    section = document.section(key, title)
+    for paragraph in paragraphs:
+        section.paragraph(paragraph)
+    return section
+
+
 def iso_time(timestamp=None):
     """TIMESTAMP (default: now) as local ISO 8601 time, to the minute."""
     moment = datetime.now() if timestamp is None else datetime.fromtimestamp(timestamp)

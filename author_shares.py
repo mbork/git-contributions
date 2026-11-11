@@ -77,12 +77,8 @@ def build_report(context, result, weights):
     extra = [*fair.weight_fields(weights), ('words', 'Words in the text', str(total_words))]
     document = session.new_report(context, result, 'Authors\' shares of the project', extra)
 
-    intro = document.section('introduction', 'What this report measures')
-    for paragraph in INTRODUCTION:
-        intro.paragraph(paragraph)
-    guide = document.section('guide', 'How to read it')
-    for paragraph in GUIDE:
-        guide.paragraph(paragraph)
+    session.add_prose(document, 'introduction', 'What this report measures', INTRODUCTION)
+    session.add_prose(document, 'guide', 'How to read it', GUIDE)
 
     main_section = document.section('shares', 'Shares')
     table = main_section.table('shares', 'Fair share and its parts, per author', [
@@ -138,9 +134,7 @@ def build_report(context, result, weights):
     for author in sorted(found, key=str):
         table.add(author=author, identities=', '.join(found[author]))
 
-    caveats = document.section('caveats', 'Caveats')
-    for paragraph in CAVEATS:
-        caveats.paragraph(paragraph)
+    session.add_prose(document, 'caveats', 'Caveats', CAVEATS)
     return document
 
 

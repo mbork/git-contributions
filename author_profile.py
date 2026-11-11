@@ -6,8 +6,7 @@ a maximal estimate.  See docs/author_profile.md."""
 # * Imports
 from dataclasses import dataclass
 
-from contrib import cli, fair, latex, replay, session, words, workcopy
-from contrib.cli import ContribError
+from contrib import cli, fair, latex, replay, session, workcopy
 from contrib.report import Column
 from contrib.session import THE_AUTHOR
 
@@ -158,17 +157,6 @@ def capped_share(count, total):
     return min(fair.percent(count, total), 100.0)
 
 
-def unit_fractions(units, is_by_author):
-    """For each unit (a list of token indices), the fraction of its words by the author."""
-    fractions = []
-    for unit in units:
-        if not unit.tokens:
-            continue
-        by_author = sum(1 for index in unit.tokens if is_by_author[index])
-        fractions.append(by_author / len(unit.tokens))
-    return fractions
-
-
 def unit_rows(name, label, fractions):
     """(key, label, count, total) rows for one kind of unit."""
     total = len(fractions)
@@ -183,18 +171,14 @@ def unit_rows(name, label, fractions):
 
 def compute(context, result, matches, weights):
     book = context.book
-    is_by_author = [result.state[t.path][t.index].writer == THE_AUTHOR for t in book.tokens]
-    is_uncommon = [not words.is_common(t.text, context.common) for t in book.tokens]
-    uncommon_by_author = sum(1 for a, u in zip(is_by_author, is_uncommon) if a and u)
+    is_by_author, is_uncommon = session.author_masks(context, result)
+    uncommon_by_author = sum(1 for is_mine, is_rare in zip(is_by_author, is_uncommon)
+                             if is_mine and is_rare)
     rows = [('words', 'Words', sum(is_by_author), len(book.tokens)),
             ('uncommon_words', 'Words other than common words', uncommon_by_author,
              sum(is_uncommon))]
-    units = [('sentences', 'Sentences',
-              [s for s in book.sentences if s.kind in ('text', 'heading')]),
-             ('formulas', 'Formulas', book.formulas),
-             ('paragraphs', 'Paragraphs', [b for b in book.blocks if b.kind == 'text'])]
-    for name, label, unit_list in units:
-        rows += unit_rows(name, label, unit_fractions(unit_list, is_by_author))
+    for name, label, units in session.unit_lists(book):
+        rows += unit_rows(name, label, session.unit_fractions(units, is_by_author))
     tallies = fair.tally(book, result)
     fair_shares = fair.shares(tallies, weights)
     context.progress.log('counting the words on every line the author touched')
@@ -273,15 +257,6 @@ def add_chapters(document, book, figures):
                   uncommon_total=uncommon, uncommon_share=uncommon_share)
 
 
-def add_identities(document, result):
-    section = document.section('identities', 'Identities counted as the author')
-    section.paragraph('Every commit whose author (as recorded, or after `.mailmap`) matches'
-                      ' the regex counts as the author\'s.')
-    table = section.table('identities', '', [Column('identity', 'Identity')])
-    for identity in session.identities(result).get(THE_AUTHOR, []):
-        table.add(identity=identity)
-
-
 def build_report(context, result, matches, weights):
     book = context.book
     figures = compute(context, result, matches, weights)
@@ -292,32 +267,21 @@ def build_report(context, result, matches, weights):
               'yes' if context.args.all_branches else 'no'),
              ('words', 'Words in the text', str(len(book.tokens)))]
     document = session.new_report(context, result, f'Contribution of {figures.name}', extra)
-    intro = document.section('introduction', 'What this report measures')
-    for paragraph in INTRODUCTION:
-        intro.paragraph(paragraph)
-    guide = document.section('guide', 'How to read it')
-    for paragraph in GUIDE:
-        guide.paragraph(paragraph)
+    session.add_prose(document, 'introduction', 'What this report measures', INTRODUCTION)
+    session.add_prose(document, 'guide', 'How to read it', GUIDE)
     add_measures(document, figures)
     add_fair(document, figures, weights)
     add_maximal(document, figures, len(book.tokens))
     add_chapters(document, book, figures)
-    add_identities(document, result)
-    caveats = document.section('caveats', 'Caveats')
-    for paragraph in CAVEATS:
-        caveats.paragraph(paragraph)
+    session.add_identities_section(document, result)
+    session.add_prose(document, 'caveats', 'Caveats', CAVEATS)
     return document, figures.name
 
 
 # * Main
 def main(progress):
     args = parse_args()
-    context = session.start(args, progress, SCRIPT)
-    author_key, matches = session.one_author_key(args.author)
-    result = session.run_replay(context, author_key)
-    if not any(commit.author == THE_AUTHOR for commit in result.commits.values()):
-        raise ContribError(f'no commit in the history of {args.commit} has an author matching'
-                           f' {args.author!r}')
+    context, result, matches = session.start_one_author(args, progress, SCRIPT)
     progress.log('computing the measures')
     document, name = build_report(context, result, matches, args.weights)
     session.write_report(context, document, name)
