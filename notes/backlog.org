@@ -9,5 +9,4 @@ Reformatting, macro renames: their words keep their previous authors.
 * Driver running =author_shares.py= at every tag, producing a timeline of shares
 * Credit for pure cutting (editorial deletion)
 * =Co-authored-by:= trailers
-* Verbatim-aware comment stripping (=%= inside verbatim is not a comment)
 * Highlighting inside display math

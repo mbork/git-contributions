@@ -76,13 +76,16 @@ Plus =make_test_repo.py=, which builds a small synthetic repo to try the scripts
 - *Formula* -- =$...$=, =\(...\)=, =$$...$$=, =\[...\]= or a math environment (=equation=,
   =align=, =gather=, =multline=, =eqnarray=, starred too).
 - *Sentence* -- ends at =.=, =?= or =!= followed (after closing characters) by whitespace,
-  except after a known abbreviation (=e.g.=, =i.e.=, =cf.=, =Fig.=, ...); also ends at a
-  paragraph end. A sectioning title is a sentence of its own.
-- *Paragraph* -- delimited by blank lines, =\par=, sectioning commands and display
-  environments.
+  except after a known abbreviation (=e.g.=, =i.e.=, =cf.=, =Fig.=, ...) or inside a formula;
+  also ends at a paragraph end. A sectioning title is a sentence of its own.
+- *Paragraph* -- delimited by blank lines, =\par=, =\item=, sectioning commands, display
+  formulas, =\begin= and =\end= of environments, and file boundaries. A paragraph made of
+  macros only (=\label{...}=, =\end{proof}=) is markup: its words count, but it is not a
+  paragraph or a sentence.
 - *Section* -- the innermost =\part=, =\chapter=, =\section= or =\subsection= a word is in.
 - *Chapter* -- top-level unit for per-chapter tables: =\chapter= if the project has any,
-  otherwise =\section=.
+  otherwise =\section=; text before the first one is a chapter of its own.
+- An =\input= or =\include= command is not a word.
 
 ** Who did what to a word
 

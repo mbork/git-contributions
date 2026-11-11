@@ -7,7 +7,7 @@ fixes are folded into those commits.
 
 * DONE =make_test_repo.py=
 * DONE =contrib/cli.py= and =contrib/report.py=
-* TODO =contrib/latex.py= (tokenizer, include graph, preamble, units)
+* DONE =contrib/latex.py= (tokenizer, include graph, preamble, units)
 * TODO =contrib/workcopy.py=
 * TODO =contrib/replay.py= and =contrib/words.py=, =common-words.txt=
 * TODO =author_shares.py= and =docs/author_shares.md=
