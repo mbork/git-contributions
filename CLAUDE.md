@@ -38,6 +38,8 @@ Private, uncommitted files (reviews, discussions, scratch) live in `mbork.local/
 
 User-facing prose (docs, `--help`, messages, report texts) is written by Claude in this repo,
 in English -- an exception to the global `TRANSLATE` rule.
+The one exception to the exception is `README.md`: Claude drafts it in Polish, leaves the
+draft uncommitted, and commits it only after mbork has translated it.
 
 ## Hard rules for the scripts
 
