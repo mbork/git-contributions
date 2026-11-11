@@ -151,7 +151,8 @@ Must never be below X's share under any reasonable definition. It is the largest
   =--commit= (squash-merged work), divided by the words in the current text. Line-level, so
   a one-word edit credits the whole paragraph, so the numerator is at least everything X
   ever typed;
-- every share above that counts units "with at least one word by X";
+- every other share in the report: words, uncommon words, units "with at least one word
+  by X" (the other unit counts are never larger), and the fair share;
 
 capped at 100%. The report has a table of all these figures (with numerators and
 denominators), marking the one that gave the maximum, plus the *word-based estimate*
