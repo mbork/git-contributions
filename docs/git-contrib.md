@@ -18,7 +18,7 @@ Each takes the same options as its script; inside the repository you can leave o
 
     cd ~/books/graphs
     git config contrib.main book.tex
-    git contrib shares --format latex
+    git contrib shares
     git contrib profile --author 'kowalski'
 
 `git contrib -h` lists the subcommands, `git contrib shares --help` shows the options of
@@ -50,9 +50,9 @@ link.
 - **The main file.**  `--main` defaults to `git config contrib.main` of the measured
   repository (the same default applies when the scripts are run directly).  Setting it
   writes to that repository's `.git/config`; the scripts themselves never do.
-- **Running a subcommand without options** prints its usage, as running a script without
-  options does; give at least one option (for example `--commit HEAD`) to run it with all
-  defaults.
+- **Running a subcommand without options** runs it with all defaults (one-author
+  subcommands still need `--author`).  Running a script directly without options prints
+  its usage instead.
 - **Help.**  `git contrib --help` never reaches `git contrib`: Git turns it into
   `git help contrib`, which shows the manual page `man/git-contrib.1`.  That is why the
   page is installed.

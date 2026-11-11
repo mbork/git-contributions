@@ -100,10 +100,9 @@ it removes every
 environment variable before running git, so that git can never be pointed at the measured
 repository by accident, and refuses to run when those two are set.
 .PP
-A subcommand given no options at all prints its usage; give at least one option (for
-example
-.BR "\-\-commit HEAD" )
-to run it with all defaults.
+A subcommand given no options at all runs with all defaults; one-author subcommands
+still need
+.BR \-\-author .
 .PP
 .B git contrib \-\-help
 shows this page;
@@ -112,7 +111,7 @@ lists the subcommands.
 .SH EXAMPLES
 .nf
 git config contrib.main main.tex
-git contrib shares \-\-format latex
+git contrib shares
 git contrib profile \-\-author 'kowalski' \-\-format latex
 git contrib highlight \-\-author 'kowalski' \-\-commit v1.0
 .fi

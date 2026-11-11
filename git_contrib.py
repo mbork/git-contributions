@@ -61,6 +61,7 @@ def main():
         sys.exit(2)
     module = importlib.import_module(SUBCOMMANDS[name][0])
     cli.PROG = f'git contrib {name}'
+    cli.DOES_RUN_WITHOUT_ARGUMENTS = True
     sys.argv = [sys.argv[0], *arguments[1:]]
     cli.run(module.main)
 

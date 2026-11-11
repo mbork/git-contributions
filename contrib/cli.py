@@ -23,6 +23,9 @@ EXTENSIONS = {'json': 'json', 'markdown': 'md', 'latex': 'tex'}
 # The name shown in usage messages instead of the script's; git_contrib.py sets it to
 # "git contrib <subcommand>".
 PROG = None
+# Whether no arguments at all means "run with the defaults" rather than "show the usage";
+# git_contrib.py sets it, so that a bare git contrib SUBCOMMAND runs.
+DOES_RUN_WITHOUT_ARGUMENTS = False
 
 
 def make_parser(prog, description, *, is_one_author, does_offer_format=True):
@@ -69,10 +72,11 @@ def make_parser(prog, description, *, is_one_author, does_offer_format=True):
 
 
 def parse_args(parser, argv=None):
-    """Parse ARGV (default: the command line); print usage and exit when it is empty."""
+    """Parse ARGV (default: the command line); print usage and exit when it is empty,
+    unless DOES_RUN_WITHOUT_ARGUMENTS."""
     if argv is None:
         argv = sys.argv[1:]
-    if not argv:
+    if not argv and not DOES_RUN_WITHOUT_ARGUMENTS:
         parser.print_help(sys.stderr)
         sys.exit(2)
     args = parser.parse_args(argv)

@@ -228,7 +228,8 @@ The five scripts as one Git command, =git contrib <subcommand> [options]=:
 
 - =git_contrib.py= dispatches to the scripts, which stay runnable on their own; usage
   messages name the subcommand.  =git contrib= alone or with =-h= lists the subcommands;
-  =git contrib <subcommand> --help= shows its options.
+  =git contrib <subcommand> --help= shows its options.  A bare =git contrib <subcommand>=
+  runs with all defaults (a script run directly without arguments prints its usage).
 - =git contrib --help= is Git's own: it shows the manual page =man/git-contrib.1=.
 - =git -C DIR contrib ...= and the current directory work.  =--git-dir= and =--work-tree=
   do not (the scripts drop every =GIT_*= variable, so that git cannot be pointed at the
