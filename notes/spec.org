@@ -21,10 +21,13 @@ Plus =make_test_repo.py=, which builds a small synthetic repo to try the scripts
 
 ** Command line
 
-- Long options only, no positional arguments; =--help= or no arguments prints usage.
+- Long options only, no positional arguments (one exception: the subcommand of
+  =git contrib=, see [[*=git contrib=]]); =--help= or no arguments prints usage.
 - Common options:
-  - =--repo DIR= (required) -- the measured repository; never modified.
-  - =--main FILE= (required) -- the main =.tex= file, relative to the repo root.
+  - =--repo DIR= (default: the repository of the current directory) -- the measured
+    repository; never modified.
+  - =--main FILE= (default: =git config contrib.main= of the measured repository; required
+    if that is not set) -- the main =.tex= file, relative to the repo root.
   - =--commit REV= (default =HEAD=) -- branch, tag or hash in the *original* repo.
   - =--format json|markdown|md|latex|tex= (default =markdown=; not in =highlight_author.py=).
   - =--output FILE= (default =<script>-<author>-<ref>.<ext>= in the current directory;
@@ -210,6 +213,31 @@ alias), a main file with preamble, =\input= and =\include=, long-line paragraphs
 and comments, and commits covering: fresh writing, typo fixes, rewrites, moves within and
 across files, removals by self and by others, a rename, a preamble edit, a branch with a
 merge and a conflict resolution, and a tag in the middle of history.
+
+* =git contrib=
+
+The five scripts as one Git command, =git contrib <subcommand> [options]=:
+
+| Subcommand  | Script                |
+|-------------+-----------------------|
+| =shares=    | =author_shares.py=    |
+| =profile=   | =author_profile.py=   |
+| =surviving= | =surviving_text.py=   |
+| =removed=   | =removed_text.py=     |
+| =highlight= | =highlight_author.py= |
+
+- =git_contrib.py= dispatches to the scripts, which stay runnable on their own; usage
+  messages name the subcommand.  =git contrib= alone or with =-h= lists the subcommands;
+  =git contrib <subcommand> --help= shows its options.
+- =git contrib --help= is Git's own: it shows the manual page =man/git-contrib.1=.
+- =git -C DIR contrib ...= and the current directory work.  =--git-dir= and =--work-tree=
+  do not (the scripts drop every =GIT_*= variable, so that git cannot be pointed at the
+  original repository by accident); =git contrib= refuses to run when they are set.
+- =install.sh --install= links =git-contrib= into =~/.local/bin= and the manual page into
+  =~/.local/share/man/man1=; =--uninstall= removes both links.  Linux only; it aborts on
+  anything unusual (directories missing or not on =PATH= / the manual path, =python3=,
+  =git=, =git-filter-repo= or =manpath= missing, files in the way that are not its own
+  links).
 
 * Documentation
 

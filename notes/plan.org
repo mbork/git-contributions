@@ -4,6 +4,7 @@
 * Layout
 
 - =make_test_repo.py=, the five scripts at the top level, executable.
+- =git_contrib.py= (linked as =git-contrib=), =man/git-contrib.1=, =install.sh=.
 - =contrib/= -- shared package:
   - =cli.py= -- common options, usage on no arguments, timing, progress on stderr.
   - =workcopy.py= -- sibling copy: build, rewrite, reuse, commit map, extracted tree.
