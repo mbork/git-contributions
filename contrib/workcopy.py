@@ -24,6 +24,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -82,6 +83,22 @@ def run_git(*args, cwd=None, git_dir=None, stdin=None):
     if result.returncode != 0:
         raise git_failure(args, result.stderr)
     return result.stdout
+
+
+def stream_git(*args, cwd=None, git_dir=None):
+    """Lines (bytes, without the newline) of a git command's output, as it runs."""
+    # stderr goes to a file: a full pipe nobody reads would block git.
+    with tempfile.TemporaryFile() as errors:
+        process = subprocess.Popen(git_command(args, git_dir), cwd=cwd,
+                                   stdout=subprocess.PIPE, stderr=errors,
+                                   env=clean_environment())
+        for line in process.stdout:
+            yield line.rstrip(b'\n')
+        returncode = process.wait()
+        errors.seek(0)
+        error = errors.read()
+    if returncode != 0:
+        raise git_failure(args, error)
 
 
 def run_git_text(*args, **kwargs):
