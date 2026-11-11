@@ -52,6 +52,9 @@ SKIP_ENVIRONMENTS = {'tikzpicture', 'pgfpicture', 'picture', 'axis', 'tikzcd', '
 INLINE_CODE = re.compile(r'\\(lstinline|mintinline)(?![A-Za-z])\s*(\[[^\]]*\])?\s*'
                          r'(\{[^{}]*\})?')
 ENDINPUT = re.compile(r'\\endinput(?![A-Za-z])')
+# A blank TeX reads as one space: spaces and tabs, with at most one line end.  Other
+# Unicode spaces (no-break, thin) and form feeds mean something else and stay as they are.
+PLAIN_GAP = re.compile(r'[ \t]*(?:\r?\n)?[ \t]*')
 
 
 # * Command line
@@ -229,9 +232,10 @@ class Highlighter:
 
 # * Flattening
 def setup_lines(args):
-    """Preamble additions: the colors and \\contribhl{color}{text}, which is lua-ul's
-    \\highLight under LuaLaTeX when lua-ul and luacolor are installed, and a colored box
-    otherwise."""
+    """Preamble additions: the colors, \\contribhl{color}{text} and \\contribgap{color} (the
+    space between two highlighted pieces).  Under LuaLaTeX with lua-ul and luacolor they
+    use lua-ul's \\highLight, so the space is colored too; otherwise a highlighted piece is
+    a colored box and the space stays plain, so that lines can still break there."""
     return ['% --- added by highlight_author.py ---',
             r'\usepackage{xcolor}',
             rf'\colorlet{{contriblight}}{{{args.light_color}}}',
@@ -244,8 +248,10 @@ def setup_lines(args):
             r'\fi',
             r'\ifx\contrib@hasul\relax',
             r'  \newcommand\contribhl[2]{{\setlength{\fboxsep}{0.4pt}\colorbox{#1}{\strut #2}}}',
+            r'  \newcommand\contribgap[1]{ }',
             r'\else',
             r'  \newcommand\contribhl[2]{\highLight[#1]{#2}}',
+            r'  \newcommand\contribgap[1]{\highLight[#1]{ }}',
             r'\fi',
             r'\makeatother',
             '% --- end of additions ---', '']
@@ -274,10 +280,13 @@ class Flattener:
             stop = len(source.text) if line_end < 0 else line_end
             edits.append((endinput.start(), endinput.end(), ''))
         if not is_suppressed:
-            for start, end, color in self.highlighter.segments(path):
-                if end <= stop:
-                    edits.append((start, start, rf'\contribhl{{{color}}}{{'))
-                    edits.append((end, end, '}'))
+            segments = [(start, end, color)
+                        for start, end, color in self.highlighter.segments(path)
+                        if end <= stop]
+            for start, end, color in segments:
+                edits.append((start, start, rf'\contribhl{{{color}}}{{'))
+                edits.append((end, end, '}'))
+            edits += gap_edits(source.text, segments)
         begin = None
         if path == self.book.main:
             begin = latex.BEGIN_DOCUMENT.search(source.clean)
@@ -311,6 +320,21 @@ class Flattener:
         if command.startswith('\\input'):
             return f'{banner}{body}'
         raise ContribError(f'internal error: unexpected include command {command!r}')
+
+
+def gap_edits(text, segments):
+    """Edits coloring the blank between two neighboring highlighted pieces: strongly
+    between two strong pieces, lightly otherwise.  Only a PLAIN_GAP qualifies; a comment,
+    a blank line or a special space keeps the blank as it is."""
+    edits = []
+    for (_, end, color), (start, _, next_color) in zip(segments, segments[1:]):
+        gap = text[end:start]
+        if not gap or not PLAIN_GAP.fullmatch(gap):
+            continue
+        is_strong = color == next_color == 'contribstrong'
+        gap_color = 'contribstrong' if is_strong else 'contriblight'
+        edits.append((end, start, rf'\contribgap{{{gap_color}}}'))
+    return edits
 
 
 def apply_edits(text, edits):

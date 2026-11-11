@@ -187,7 +187,10 @@ Writer as in =surviving_text.py= (moves do not count).
 
 - Meant for LuaLaTeX with =lua-ul= (=\highLight=, hyphenation kept); without them (pdfLaTeX,
   or the packages missing) every highlighted word gets a =\colorbox= instead, so the file
-  compiles either way.  One highlight per word or inline formula, so lines break freely.
+  compiles either way.  One highlight per word or inline formula, so lines break freely;
+  under =lua-ul= the blank between two highlighted pieces is highlighted too (strong
+  between two strong pieces, light otherwise) when it is only spaces and tabs with at most
+  one line break.
   stderr prints the exact command, which takes the other files (images, bibliography,
   classes) from an extracted tree of =--commit= kept in the working copy.
 - Options: =--light-color=, =--strong-color= (=xcolor= specs).

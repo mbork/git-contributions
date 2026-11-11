@@ -67,10 +67,12 @@ Options common to all scripts are described by `--help`; `--author` is required,
 ### LuaLaTeX or pdfLaTeX
 
 With LuaLaTeX and the packages `lua-ul` and `luacolor` installed, words are highlighted
-with `lua-ul`'s `\highLight`, which keeps hyphenation.  Otherwise (pdfLaTeX, or missing
-packages) every highlighted word is a colored box: it looks the same, but highlighted
-words are never hyphenated, so some lines may come out a little loose.  Packages the project
-loads for pdfLaTeX (`inputenc`, for example) are usually harmless under LuaLaTeX.
+with `lua-ul`'s `\highLight`, which keeps hyphenation, and the spaces between highlighted
+words are colored too, so a highlighted passage reads as one band.  Otherwise (pdfLaTeX,
+or missing packages) every highlighted word is a colored box and the spaces stay white;
+highlighted words are never hyphenated, so some lines may come out a little loose.
+Packages the project loads for pdfLaTeX (`inputenc`, for example) are usually harmless under
+LuaLaTeX.
 
 ## How it works
 
@@ -92,9 +94,13 @@ highlighting is unsafe (inside a picture, display math, a fragile argument, and 
 however it is included elsewhere.
 
 Just before `\begin{document}`, the script adds `xcolor`, the two colors
-(`contriblight`, `contribstrong`) and the macro `\contribhl{color}{text}`, which is
+(`contriblight`, `contribstrong`) and two macros.  `\contribhl{color}{text}` is
 `\highLight[color]{text}` when LuaTeX, `lua-ul` and `luacolor` are available, and
-`\colorbox{color}{\strut text}` otherwise.
+`\colorbox{color}{\strut text}` otherwise.  `\contribgap{color}` replaces the blank
+between two neighboring highlighted pieces when it is made of spaces and tabs with at most
+one line break (no comment, no no-break or thin space, no form feed).  It is
+`\highLight[color]{ }` -- strong between two strong pieces, light otherwise -- or a plain
+space without `lua-ul`.  A real space keeps TeX's wider space after a sentence.
 
 ### What gets highlighted
 
@@ -132,8 +138,8 @@ were highlighted (inline formulas count with all their author's words).
 
 - Highlighting is conservative: when in doubt a word is left alone, so that the file
   compiles.  The count of words left out shows how much that matters for the project.
-- Each word is highlighted on its own, so the spaces between highlighted words are not
-  colored.
+- Each word is highlighted on its own (so that lines break between words even with the
+  colored-box fallback); with `lua-ul` the spaces between them are colored separately.
 - `\includeonly` in the preamble has no effect on the flattened file.
 - A project whose packages do not work under LuaLaTeX can still be compiled with pdfLaTeX,
   with the colored-box fallback.
