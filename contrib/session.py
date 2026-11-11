@@ -34,6 +34,10 @@ def start(args, progress, script):
     if args.main is None:
         args.main = configured_main(top)
     reports_dir = reports_directory(top) if args.output is None else None
+    if args.output is not None:
+        parent = Path(args.output).expanduser().resolve().parent
+        if not parent.is_dir():
+            raise ContribError(f'cannot write {args.output}: {parent} is not a directory')
     work_copy = workcopy.prepare(args.repo, args.commit, progress)
     if args.mailmap is not None:
         mailmap = Path(args.mailmap).expanduser().resolve()
