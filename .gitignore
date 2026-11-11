@@ -1,0 +1,14 @@
+# Private review and discussion files
+/mbork.local/
+
+# Python
+__pycache__/
+*.pyc
+
+# Reports generated while trying the scripts out
+/reports/
+
+# Editor leftovers
+*~
+.#*
+\#*#
