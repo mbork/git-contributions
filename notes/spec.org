@@ -201,9 +201,10 @@ Writer as in =surviving_text.py= (moves do not count).
 - Options: =--light-color=, =--strong-color= (=xcolor= specs).
 - Best effort: words inside display math, verbatim, macro names and arguments such as
   =\label=, =\ref=, =\cite=, headings, captions, footnotes, optional arguments,
-  environment delimiters, tables, pictures and inline code are not highlighted, nor are
-  words with macros other than text formatting, nor files included from the preamble or
-  from such places;
+  environment delimiters, tables, pictures, bibliographies, citation keys, key=value
+  lists and inline code are not highlighted, nor are words containing ~=~ or macros other
+  than text
+  formatting, nor files included from the preamble or from such places;
   an inline formula is highlighted as a whole when most of its words are X's. The file
   starts with a comment block (and stderr gets a summary) giving how many of X's words
   could not be highlighted.

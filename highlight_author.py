@@ -34,7 +34,8 @@ TEXT_MACROS = {'emph', 'textbf', 'textit', 'textsl', 'textsc', 'texttt', 'textrm
                'textemdash', 'textquoteleft', 'textquoteright', 'S', 'P', 'dag', 'ddag'}
 # Escapes (backslash and a non-letter) that print text or adjust it in place.
 SAFE_ESCAPES = set(',;!-\'"`.&%$#_{}@/')
-UNSAFE_CHARACTERS = set('$&#^_[]%')     # outside escapes
+# Outside escapes.  = marks key=value lists (bibliography entries, package options).
+UNSAFE_CHARACTERS = set('$&#^_[]%=')
 # Groups whose contents must not be highlighted: moving arguments, references, code,
 # definitions, boxes.
 FRAGILE_COMMANDS = set(latex.SECTION_LEVELS) | {
@@ -44,10 +45,12 @@ FRAGILE_COMMANDS = set(latex.SECTION_LEVELS) | {
     'includegraphics', 'input', 'include', 'bibliography', 'newcommand', 'renewcommand',
     'providecommand', 'def', 'newenvironment', 'renewenvironment', 'setlength', 'hspace',
     'vspace', 'tag', 'text', 'mbox', 'hbox', 'makebox', 'parbox', 'raisebox', 'definecolor',
-    'colorlet', 'DeclareRobustCommand', 'NewDocumentCommand', 'lstinline', 'mintinline'}
-# Environments whose contents are code or alignments, not running text.
+    'colorlet', 'DeclareRobustCommand', 'NewDocumentCommand', 'lstinline', 'mintinline',
+    'bib', 'bibitem', 'setkeys'}
+# Environments whose contents are code, alignments or bibliographic data, not running text.
 SKIP_ENVIRONMENTS = {'tikzpicture', 'pgfpicture', 'picture', 'axis', 'tikzcd', 'forest',
-                     'tabular', 'tabular*', 'tabularx', 'longtable', 'array', 'tabbing'}
+                     'tabular', 'tabular*', 'tabularx', 'longtable', 'array', 'tabbing',
+                     'thebibliography', 'bibdiv', 'biblist'}
 # Inline code with an arbitrary delimiter, like \verb.
 INLINE_CODE = re.compile(r'\\(lstinline|mintinline)(?![A-Za-z])\s*(\[[^\]]*\])?\s*'
                          r'(\{[^{}]*\})?')
@@ -103,8 +106,11 @@ def is_safe_word(text):
 
 # ** Ranges
 def matching_pairs(clean):
-    """Opening offset of every closing brace and bracket of CLEAN (unescaped)."""
+    """(opening, keyval): the opening offset of every closing brace and bracket of CLEAN
+    (unescaped), and the opening offsets of the brace groups with an = at their own top
+    level -- key=value lists, whatever command they belong to."""
     opening = {}
+    keyval = set()
     stacks = {'}': [], ']': []}
     pairs = {'{': '}', '[': ']'}
     index = 0
@@ -117,8 +123,16 @@ def matching_pairs(clean):
             stacks[pairs[char]].append(index)
         elif char in stacks and stacks[char]:
             opening[index] = stacks[char].pop()
+        elif char == '=' and stacks['}']:
+            keyval.add(stacks['}'][-1])
         index += 1
-    return opening
+    return opening, keyval
+
+
+def is_fragile(command):
+    """Whether the arguments of COMMAND must not be highlighted; every citation command
+    (natbib's, biblatex's, ...) is, whatever its exact name."""
+    return command in FRAGILE_COMMANDS or (command is not None and 'cite' in command.lower())
 
 
 def command_before(clean, index, opening):
@@ -147,11 +161,11 @@ def unsafe_ranges(source):
     clean = source.clean
     ranges = [(start, end) for kind, start, end in source.regions
               if kind in ('verbatim', 'display')]
-    opening = matching_pairs(clean)
+    opening, keyval = matching_pairs(clean)
     for close, start in opening.items():
         command = command_before(clean, start, opening)
         is_option = clean[start] == '['
-        if command in FRAGILE_COMMANDS or (is_option and command is not None):
+        if is_fragile(command) or (is_option and command is not None) or start in keyval:
             ranges.append((start, close + 1))
     for match in INLINE_CODE.finditer(clean):
         delimiter = clean[match.end():match.end() + 1]

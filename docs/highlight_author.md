@@ -26,6 +26,10 @@ they are even if the author wrote them:
 - displayed formulas, and short formulas mostly written by others;
 - references, citations, labels, URLs;
 - tables, pictures (TikZ), program code and verbatim text;
+- the bibliography (`thebibliography`, and `amsrefs`'s `bibdiv` and `biblist`), and the
+  keys of every citation command;
+- settings: anything in braces that contains `key=value` (`\tikzset{...}`,
+  `\hypersetup{...}`, `\lstset{...}` and the like);
 - options in square brackets (such as the name of a theorem in `\begin{lemma}[...]`);
 - words containing commands other than simple formatting (`\emph`, `\textbf`, ...), for
   example the author's own macros;
@@ -124,18 +128,21 @@ A word is left out when:
 
 - it is part of a heading, a displayed formula, or a block of structural macros
   (`\label{...}`, `\end{proof}`);
-- it contains `$ & # ^ _ [ ] %` (unescaped), a macro other than the text-formatting ones
+- it contains `$ & # ^ _ [ ] % =` (unescaped; `=` marks key=value lists such as
+  bibliography entries and package options), a macro other than the text-formatting ones
   (`\emph`, `\textbf`, `\textit`, `\texttt`, `\ldots`, accented letters and the like),
   or a backslash followed by anything but a letter or a safe escape (`\,`, `\%`, `\&`,
   `\-`, accents ...) -- so `\\`, `\=` and a control space (`e.g.\ `) are out;
 - its braces do not balance (as in `\emph{two` of `\emph{two words}`);
 - it lies inside verbatim text or inline code (`\verb`, `\lstinline`, `\mintinline`),
-  display math, an optional argument in square brackets after a command, the arguments of
-  a fragile or non-text command (headings, `\caption`, `\footnote`, `\title`, `\author`,
-  `\label`, `\ref`, `\cite`, `\url`, `\href`, `\mbox`, `\text`, definitions such as
-  `\newcommand` or `\definecolor`, ...), or inside a `tikzpicture`, `tabular`, `array`,
-  `tabbing`, `picture` and similar environment.  The command owning an argument is found
-  by walking back over all its earlier arguments, however long.
+  display math, an optional argument in square brackets after a command, a braced group
+  with an `=` at its top level (a key=value list), the arguments of a fragile or non-text
+  command (headings, `\caption`, `\footnote`, `\title`, `\author`, `\label`, `\ref`,
+  every command whose name contains `cite`, `\url`, `\href`, `\mbox`, `\text`, `\bib`,
+  `\bibitem`, definitions such as `\newcommand` or `\definecolor`, ...), or inside a
+  `tikzpicture`, `tabular`, `array`, `tabbing`, `picture`, bibliography and similar
+  environment.  The command owning an argument is found by walking back over all its
+  earlier arguments, however long.
 
 The comment at the top of the file counts the author's words in the body and how many
 were highlighted (inline formulas count with all their author's words).
