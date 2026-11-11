@@ -1,0 +1,18 @@
+#+title: Tasks
+#+startup: content
+#+todo: TODO | DONE
+
+Each task is one or more atomic commits, followed by one round of =/blind-review= whose
+fixes are folded into those commits.
+
+* TODO =make_test_repo.py=
+* TODO =contrib/cli.py= and =contrib/report.py= (with a trivial report to try them)
+* TODO =contrib/latex.py= (tokenizer, include graph, preamble, units)
+* TODO =contrib/workcopy.py=
+* TODO =contrib/replay.py= and =contrib/words.py=, =common-words.txt=
+* TODO =author_shares.py= and =docs/author_shares.md=
+* TODO =author_profile.py= and =docs/author_profile.md=
+* TODO =surviving_text.py= and =docs/surviving_text.md=
+* TODO =removed_text.py= and =docs/removed_text.md=
+* TODO =highlight_author.py= and =docs/highlight_author.md=
+* TODO A README listing the scripts and pointing to =docs/=
