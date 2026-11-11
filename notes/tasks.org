@@ -5,7 +5,7 @@
 Each task is one or more atomic commits, followed by one round of =/blind-review= whose
 fixes are folded into those commits.
 
-* TODO =make_test_repo.py=
+* DONE =make_test_repo.py=
 * TODO =contrib/cli.py= and =contrib/report.py= (with a trivial report to try them)
 * TODO =contrib/latex.py= (tokenizer, include graph, preamble, units)
 * TODO =contrib/workcopy.py=
