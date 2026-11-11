@@ -259,6 +259,8 @@ LATEX_PREAMBLE = r"""\documentclass[a4paper,11pt]{article}
 \usepackage{array,booktabs,longtable}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.5\baselineskip}
+\setlength{\emergencystretch}{2em}
+\newcommand{\contribbreak}{\penalty5000\hskip0pt\relax}
 """
 
 
@@ -287,9 +289,55 @@ def tex_escape(text, specials=None):
     return ''.join(tex_character(char, specials) for char in one_line(text))
 
 
+# ** Breaking long words
+LONG_WORD = 20              # words this long (as printed) get break points ...
+WORD_CHUNK = 10             # ... every this many printed characters
+# A break TeX takes only when nothing better is left: long words in narrow cells.
+TEX_BREAK = r'\contribbreak{}'
+
+
+def tex_breakable(text, specials):
+    """TEXT escaped with SPECIALS, with TEX_BREAK in long words and after placeholders.
+
+    Lengths count printed characters, so a placeholder like [U+03BB] counts as eight."""
+    pieces = [tex_character(char, specials) for char in one_line(text)]
+    out = []
+    word = []
+
+    def flush():
+        is_long = sum(len(piece) for piece in word) >= LONG_WORD
+        printed = 0
+        for piece in word:
+            if is_long and printed >= WORD_CHUNK:
+                out.append(TEX_BREAK)
+                printed = 0
+            out.append(piece)
+            printed += len(piece)
+            if piece.startswith('[U+'):
+                out.append(TEX_BREAK)
+                printed = 0
+        word.clear()
+
+    for piece in pieces:
+        if piece == ' ':
+            flush()
+            out.append(piece)
+        else:
+            word.append(piece)
+    flush()
+    return ''.join(out)
+
+
+def printed_length(text):
+    """Characters TEXT takes when printed (a placeholder counts as eight)."""
+    return sum(len(tex_character(char, LATEX_SPECIALS)) if ord(char) > 0x7e else 1
+               for char in one_line(text))
+
+
 def tex_code(text):
+    """TEXT in typewriter type, with break points in long words."""
     specials = LATEX_SPECIALS | LATEX_CODE_SPECIALS
-    return r'\texttt{' + tex_escape(text, specials) + '}'
+    return r'\texttt{' + tex_breakable(text, specials) + '}'
 
 
 def tex_quotes(text):
@@ -313,28 +361,110 @@ def tex_cell(kind, value):
     shown = format_value(kind, value)
     if kind == 'code' and value is not None:
         return tex_code(shown)
-    return tex_escape(shown)
+    return tex_breakable(shown, LATEX_SPECIALS)
+
+
+# ** Tables
+WIDE_TABLE_COLUMNS = 6      # from this many columns on, a table gets tighter spacing
+SHORT_LABEL = 10            # column labels this short stay on one line
+LINE_WIDTH_PT = 483         # \linewidth of the document (A4, 2 cm margins)
+CHARACTER_PT = 5.8          # a generous average width of a character, in points
+MIN_COLUMN_PT = 60          # no wrapped column gets narrower than this
+WIDTH_MARGIN = 0.94         # the estimates are rough: use only this part of the line
+
+
+def header_lines(label):
+    """LABEL as one line, or as two when it has several words and is not short."""
+    words = label.split()
+    if len(words) < 2 or len(label) <= SHORT_LABEL:
+        return [label]
+    half = (len(label) + 1) // 2
+    split = 1
+    while split < len(words) - 1:
+        head = ' '.join(words[:split + 1])
+        if len(head) > half:
+            break
+        split += 1
+    first = ' '.join(words[:split])
+    second = ' '.join(words[split:])
+    return [first, second]
+
+
+def tex_header(label, alignment):
+    """A column label, over two lines when header_lines says so."""
+    lines = [tex_escape(line) for line in header_lines(label)]
+    if len(lines) == 1:
+        return lines[0]
+    # \\ looks ahead for * or [, which the second line could start with.
+    body = (r'\\' + TEX_ROW_START).join(lines)
+    return rf'\begin{{tabular}}[b]{{@{{}}{alignment}@{{}}}}{body}\end{{tabular}}'
+
+
+def natural_width(table, column):
+    """Estimated width of COLUMN's widest cell or header line, in points."""
+    lengths = [printed_length(line) for line in header_lines(column.label)]
+    lengths += [printed_length(format_value(column.kind, row[column.key]))
+                for row in table.rows]
+    return max(lengths) * CHARACTER_PT
+
+
+def wrap_width(widths, room):
+    """The cap c with sum(min(width, c)) = ROOM: columns narrower than c keep their width,
+    the others wrap at c (never below MIN_COLUMN_PT)."""
+    remaining = room
+    ordered = sorted(widths)
+    for count, width in enumerate(ordered):
+        others = len(ordered) - count
+        if width * others >= remaining:
+            return max(remaining / others, MIN_COLUMN_PT)
+        remaining -= width
+    return max(ordered[-1], MIN_COLUMN_PT)
+
+
+def column_specs(table, separation_pt):
+    """Column types: natural widths when the row fits the line; otherwise the widest text
+    and code columns wrap, at a common width chosen so that the row fits."""
+    widths = [natural_width(table, column) for column in table.columns]
+    available = (LINE_WIDTH_PT - 2 * separation_pt * len(table.columns)) * WIDTH_MARGIN
+    is_numeric = [column.kind in NUMERIC_KINDS for column in table.columns]
+    if sum(widths) <= available:
+        return ['r' if numeric else 'l' for numeric in is_numeric]
+    numbers = sum(width for width, numeric in zip(widths, is_numeric) if numeric)
+    flexible = [width for width, numeric in zip(widths, is_numeric) if not numeric]
+    if not flexible:
+        return ['r'] * len(widths)
+    cap = wrap_width(flexible, max(available - numbers, MIN_COLUMN_PT * len(flexible)))
+    specs = []
+    for width, numeric in zip(widths, is_numeric):
+        if numeric:
+            specs.append('r')
+        elif width <= cap:
+            specs.append('l')
+        else:
+            fraction = cap / LINE_WIDTH_PT
+            specs.append(rf'>{{\raggedright\arraybackslash}}p{{{fraction:.3f}\linewidth}}')
+    return specs
 
 
 def tex_table(table):
-    specs = []
-    for column in table.columns:
-        if column.kind == 'code':
-            specs.append(r'>{\raggedright\arraybackslash}p{0.4\linewidth}')
-        elif column.kind == 'text':
-            specs.append('l')
-        else:
-            specs.append('r')
+    is_wide = len(table.columns) >= WIDE_TABLE_COLUMNS
+    specs = column_specs(table, 4 if is_wide else 6)
     lines = []
     if table.caption:
         lines.append(r'\textbf{' + tex_escape(table.caption) + r'}\par\nopagebreak')
-    header = ' & '.join(tex_escape(c.label) for c in table.columns) + r' \\'
+    alignments = ['r' if c.kind in NUMERIC_KINDS else 'l' for c in table.columns]
+    header = ' & '.join(tex_header(c.label, alignment)
+                        for c, alignment in zip(table.columns, alignments)) + r' \\'
+    if is_wide:
+        lines.append(r'{\setlength{\tabcolsep}{4pt}')
     lines += [r'\begin{longtable}{' + ''.join(specs) + '}', r'\toprule', header, r'\midrule',
               r'\endhead']
     for row in table.rows:
         cells = [tex_cell(c.kind, row[c.key]) for c in table.columns]
         lines.append(TEX_ROW_START + ' & '.join(cells) + r' \\')
     lines += [r'\bottomrule', r'\end{longtable}']
+    if is_wide:
+        lines.append('}')
     return lines
 
 
@@ -369,9 +499,10 @@ def tex_section(section, depth):
 def render_latex(report):
     lines = [LATEX_PREAMBLE, r'\begin{document}', '',
              r'{\LARGE\bfseries ' + tex_escape(report.title) + r'\par}', '',
-             r'\begin{longtable}{l>{\raggedright\arraybackslash}p{0.7\linewidth}}']
+             r'\begin{longtable}{>{\raggedright\arraybackslash}p{0.22\linewidth}'
+             r'>{\raggedright\arraybackslash}p{0.72\linewidth}}']
     for _, label, value in report.metadata:
-        cells = [tex_escape(label), tex_cell('text', value)]
+        cells = [tex_breakable(label, LATEX_SPECIALS), tex_cell('text', value)]
         lines.append(TEX_ROW_START + ' & '.join(cells) + r' \\')
     lines += [r'\end{longtable}', '']
     for section in report.sections:
