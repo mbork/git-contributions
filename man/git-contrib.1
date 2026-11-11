@@ -77,7 +77,9 @@ not for
 .TP
 .BI \-\-output " file"
 The report (default: a name built from the subcommand, the author and the revision, in
-the current directory).
+the current directory; when that is inside the measured repository, in
+.IR repo \fB\-\-contrib\-reports\fR
+next to it instead, so that nothing is written into the repository's working tree).
 .SH CONFIGURATION
 .TP
 .B contrib.main

@@ -294,6 +294,18 @@ def original_config(common_dir, key):
     return result.stdout.decode().strip() if result.returncode == 0 else None
 
 
+def repository_paths(top):
+    """Every directory belonging to the repository at TOP: all its worktrees and its git
+    directory (resolved)."""
+    paths = [Path(run_git_text('rev-parse', '--path-format=absolute', '--git-common-dir',
+                               cwd=top)).resolve()]
+    listing = run_git_text('worktree', 'list', '--porcelain', cwd=top)
+    for line in listing.splitlines():
+        if line.startswith('worktree '):
+            paths.append(Path(line[len('worktree '):]).resolve())
+    return paths
+
+
 def repository_config(top, key):
     """KEY from the own configuration of the repository at TOP (not the user's), or None."""
     common_dir = Path(run_git_text('rev-parse', '--path-format=absolute', '--git-common-dir',

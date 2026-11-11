@@ -52,9 +52,15 @@ how many were left out this way.
 
 The script prints the command to compile the file, for example
 
-    TEXINPUTS=/home/me/books/graphs--contrib--v1-0-1a2b3c4//: \
+    cd /home/me/books/graphs--contrib-reports && \
+      TEXINPUTS=/home/me/books/graphs--contrib--v1-0-1a2b3c4//: \
       BIBINPUTS=/home/me/books/graphs--contrib--v1-0-1a2b3c4//: \
       lualatex highlight-author-jan-kowalski-v1-0.tex
+
+The file is written to the current directory -- or, when that is inside the project's
+repository, to `<repo>--contrib-reports` next to it -- unless `--output` says otherwise;
+the command compiles it in its own directory, so that LaTeX's auxiliary files land next
+to it.
 
 The two variables let LaTeX find the project's other files (images, bibliography, classes) as
 they were at the chosen commit; the working copy keeps them in its `tree/` directory.  Run

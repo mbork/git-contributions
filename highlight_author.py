@@ -368,8 +368,12 @@ def header(context, name, highlighter, output):
 
 
 def compile_command(work_copy, output):
+    """The command compiling OUTPUT in its own directory, so that LaTeX's auxiliary files
+    land next to it."""
     tree = shlex.quote(f'{work_copy.tree}//:')
-    return f'TEXINPUTS={tree} BIBINPUTS={tree} lualatex {shlex.quote(str(output))}'
+    directory = shlex.quote(str(output.resolve().parent))
+    name = shlex.quote(output.name)
+    return f'cd {directory} && TEXINPUTS={tree} BIBINPUTS={tree} lualatex {name}'
 
 
 # * Main
@@ -381,7 +385,7 @@ def main(progress):
     highlighter = Highlighter(context, result)
     flattener = Flattener(context.book, highlighter, setup_lines(args))
     body = flattener.flatten(context.book.main)
-    output = cli.output_path(args, SCRIPT, args.commit, 'tex', name)
+    output = session.output_file(context, 'tex', name)
     text = header(context, name, highlighter, output) + body
     report.write_text(text, output, errors='surrogateescape')
     progress.log(f'{highlighter.author_words} words by {name}, {highlighter.highlighted_words}'

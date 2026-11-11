@@ -59,7 +59,9 @@ def make_parser(prog, description, *, is_one_author, does_offer_format=True):
                            help='json, markdown (md) or latex (tex) (default: %(default)s)')
     group.add_argument('--output', metavar='FILE',
                        help='output file (default: derived from the script, author and'
-                            ' revision, in the current directory)')
+                            ' revision, in the current directory -- or, when that is'
+                            ' inside the measured repository, in REPO--contrib-reports'
+                            ' next to it)')
     group.add_argument('--mailmap', metavar='FILE',
                        help='mailmap file (default: .mailmap at --commit, if any)')
     group.add_argument('--include-preamble', action='store_true',
@@ -93,15 +95,17 @@ def slug(text):
     return dashed.strip('-') or 'x'
 
 
-def output_path(args, script, ref, extension, author=None):
-    """The --output file, or a default name built from the script, author and REF."""
+def output_path(args, script, ref, extension, author=None, directory=None):
+    """The --output file, or a default name built from the script, author and REF, in
+    DIRECTORY (default: the current directory)."""
     if args.output is not None:
         return Path(args.output)
     parts = [script.removesuffix('.py').replace('_', '-')]
     if author is not None:
         parts.append(slug(author))
     parts.append(slug(ref))
-    return Path('-'.join(parts) + '.' + extension)
+    name = '-'.join(parts) + '.' + extension
+    return Path(directory) / name if directory is not None else Path(name)
 
 
 # * Progress

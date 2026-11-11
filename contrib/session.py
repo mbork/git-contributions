@@ -24,13 +24,16 @@ class Session:
     book: object            # latex.Book
     common: set             # common words
     script: str             # file name of the running script
+    reports_dir: object     # Path for default output files, or None for the current one
 
 
 def start(args, progress, script):
     """Prepare everything a script needs for ARGS."""
+    # Before building the working copy, which can take long: fail early on these.
+    top = workcopy.locate(args.repo, args.commit).original
     if args.main is None:
-        # Before building the working copy, which can take long: fail early without one.
-        args.main = configured_main(workcopy.locate(args.repo, args.commit).original)
+        args.main = configured_main(top)
+    reports_dir = reports_directory(top) if args.output is None else None
     work_copy = workcopy.prepare(args.repo, args.commit, progress)
     if args.mailmap is not None:
         mailmap = Path(args.mailmap).expanduser().resolve()
@@ -47,7 +50,7 @@ def start(args, progress, script):
     if not book.tokens:
         raise ContribError(f'no text found in {args.main} and the files it includes')
     common = words.load(args.common_words)
-    return Session(args, progress, work_copy, mailmap, book, common, script)
+    return Session(args, progress, work_copy, mailmap, book, common, script, reports_dir)
 
 
 def configured_main(top):
@@ -236,9 +239,32 @@ def common_words_field(session):
     return ('common_words', 'Common-words file', str(name) if name else 'default')
 
 
-def write_report(session, document, author=None):
+def reports_directory(top):
+    """Where default output files go: None (the current directory), unless that is inside
+    the measured repository at TOP -- any of its worktrees or its git directory -- which
+    the scripts never write to; then <top>--contrib-reports next to TOP, created now."""
+    cwd = Path.cwd().resolve()
+    if not any(cwd.is_relative_to(path) for path in workcopy.repository_paths(top)):
+        return None
+    resolved = top.resolve()
+    directory = resolved.parent / f'{resolved.name}--contrib-reports'
+    try:
+        directory.mkdir(exist_ok=True)
+    except OSError as error:
+        raise ContribError(f'cannot create {directory} for the report ({error.strerror});'
+                           ' give --output') from None
+    if not directory.is_dir():
+        raise ContribError(f'{directory} is not a directory; give --output')
+    return directory
+
+
+def output_file(session, extension, author=None):
     args = session.args
-    path = cli.output_path(args, session.script, args.commit, cli.EXTENSIONS[args.format],
-                           author)
-    report.write(document, args.format, path)
+    return cli.output_path(args, session.script, args.commit, extension, author,
+                           session.reports_dir)
+
+
+def write_report(session, document, author=None):
+    path = output_file(session, cli.EXTENSIONS[session.args.format], author)
+    report.write(document, session.args.format, path)
     session.progress.finish(path)

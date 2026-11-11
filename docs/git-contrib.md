@@ -47,6 +47,10 @@ link.
   the measured repository by accident; `git --git-dir=...` passes the repository exactly
   that way, so `git contrib` refuses to run when `GIT_DIR` or `GIT_WORK_TREE` is set.
   Use `-C` or `--repo` instead.
+- **Where reports go.**  By default a report is written to the current directory; when
+  that is inside the measured repository (as it usually is with `git contrib`), it goes
+  to `<repo>--contrib-reports` next to the repository instead, so that nothing is
+  written into its working tree.  `--output` overrides both.
 - **The main file.**  `--main` defaults to `git config contrib.main` of the measured
   repository (the same default applies when the scripts are run directly).  Setting it
   writes to that repository's `.git/config`; the scripts themselves never do.

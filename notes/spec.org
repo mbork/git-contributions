@@ -30,8 +30,10 @@ Plus =make_test_repo.py=, which builds a small synthetic repo to try the scripts
     if that is not set) -- the main =.tex= file, relative to the repo root.
   - =--commit REV= (default =HEAD=) -- branch, tag or hash in the *original* repo.
   - =--format json|markdown|md|latex|tex= (default =markdown=; not in =highlight_author.py=).
-  - =--output FILE= (default =<script>-<author>-<ref>.<ext>= in the current directory;
-    no =<author>= part in =author_shares.py=).
+  - =--output FILE= (default =<script>-<author>-<ref>.<ext>= in the current directory,
+    or, when that is inside the measured repository, in =<repo>--contrib-reports= next to
+    it, so that the scripts never write into its working tree; no =<author>= part in
+    =author_shares.py=).
   - =--mailmap FILE= (default: =.mailmap= at =--commit=, if any).
   - =--include-preamble= -- also count the preamble (see [[*What text counts]]).
   - =--common-words FILE= (default: =common-words.txt= shipped with the scripts).
