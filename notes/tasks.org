@@ -16,4 +16,4 @@ fixes are folded into those commits.
 * DONE =removed_text.py= and =docs/removed_text.md=
 * DONE =highlight_author.py= and =docs/highlight_author.md=
 * DONE =git contrib=: dispatcher, manual page, =install.sh=, =docs/git-contrib.md=
-* TODO =README.md=: Polish draft (uncommitted), mbork translates, then commit
+* DONE =README.org=: Polish draft (uncommitted), mbork translates, then commit

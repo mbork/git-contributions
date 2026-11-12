@@ -1,0 +1,37 @@
+#+title: git-contributions
+
+These scripts measure who wrote which parts in a LaTeX project kept in Git.  =git blame= counts /lines/, and in LaTeX files one line is often a whole paragraph – so the scripts count /words/ instead.  That requires rewriting the history of the Git repo, which happens in another directory – your original repo stays intact.  (But make a backup just in case.)
+
+This project is 100% vibe-coded.  The only thing written by me is this very README; an LLM wrote it in Polish and [[https://blog.beeminder.com/slop#:~:text=The%20idea%20is%20that%20the%20end%20user%20never%20reads%20any%20English%20text%20that%20was%20generated%20by%20an%20LLM][I translated it into English so that the words you are reading are written by an actual human]].  (The rest of the documentation was written by an LLM.)
+
+* Commands
+
+| Command                 | Result                                                                     |
+|-------------------------+----------------------------------------------------------------------------|
+| ~git contrib shares~    | Every author's share as a percentage                                       |
+| ~git contrib profile~   | One author's share measured in several ways                                |
+| ~git contrib surviving~ | Words written by one author which survived to the given version            |
+| ~git contrib removed~   | Words written by one author which didn't make it to the given version      |
+| ~git contrib highlight~ | The whole project as one LaTeX file, with words by one author highlighted  |
+
+* Installation
+
+#+begin_src sh
+./install.sh --install
+#+end_src
+
+You'll need Linux, Python v3.9+, Git v2.36+ and git-filter-repo v2.47+.
+
+* Usage
+
+#+begin_src sh
+cd ~/path/to/the/project
+git config contrib.main main.tex
+git contrib --help
+#+end_src
+
+Every command writes its report to a file.  See =docs/= for the documentation of each command.
+
+* License
+
+GPL-3.0-or-later. See =LICENSE=.

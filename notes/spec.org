@@ -248,6 +248,6 @@ The five scripts as one Git command, =git contrib <subcommand> [options]=:
 =docs/<script>.md= per script: first a non-technical section (what it measures, how, with
 examples, trade-offs and caveats), then the detailed algorithm.
 
-=README.md= -- very short: what the scripts are for, one line per script, a pointer to
+=README.org= -- very short: what the scripts are for, one line per script, a pointer to
 =docs/=.  Written by a human: Claude drafts it in Polish and leaves it uncommitted; mbork
 translates it into English; then Claude commits the translation.
