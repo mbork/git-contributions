@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """The whole LaTeX project in one file, with one author's surviving words highlighted.
 See docs/highlight_author.md."""

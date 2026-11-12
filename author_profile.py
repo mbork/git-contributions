@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """One author's contribution to a LaTeX project in Git, measured in many ways, with a fair and
 a maximal estimate.  See docs/author_profile.md."""

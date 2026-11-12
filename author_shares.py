@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """Every author's fair share of a LaTeX project in Git, in percent.  See docs/author_shares.md."""
 

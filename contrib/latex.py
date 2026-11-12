@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """LaTeX source analysis: words with their source offsets, the include graph, the preamble,
 and the units the reports count (sentences, formulas, paragraphs, sections, chapters).

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """Command-line handling shared by the scripts: options, usage, progress, timing, errors."""
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """One report model, rendered to JSON, Markdown or LaTeX with the same information.
 

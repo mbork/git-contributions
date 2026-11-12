@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """Everything one author wrote that is still in a LaTeX project in Git: statistics, then every
 sentence with the author's words, by chapter and section.  See docs/surviving_text.md."""

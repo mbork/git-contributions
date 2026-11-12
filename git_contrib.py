@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """git contrib: the five contribution scripts as one Git command.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """A single pass over the rewritten history, following every word from commit to commit.
 

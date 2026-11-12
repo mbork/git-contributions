@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """What every script does around its own measure: prepare the working copy, analyze the
 project, replay the history, match authors, and write the report with a common header."""

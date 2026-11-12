@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """Build a small synthetic Git repo with a multi-file LaTeX book, to try the scripts on.
 

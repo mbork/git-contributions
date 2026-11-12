@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 # Install git contrib for the current user: link git-contrib into ~/.local/bin and its
 # manual page into ~/.local/share/man/man1.  Linux only, standard paths only; anything

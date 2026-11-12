@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """The working copy: a rewritten copy of the measured repository in a sibling directory.
 

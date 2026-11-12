@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # * Overview
 """The fair measure: points per author for writing, rewriting, moving and removed drafts.
 
